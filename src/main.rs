@@ -14,7 +14,6 @@ pub const STARS_COUNT: usize = 10;
 pub const STAR_SIZE: f32 = 30.0;
 pub const STAR_SPAWN_TIME: f32 = 1.0;
 
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -47,7 +46,6 @@ fn main() {
         .run();
 }
 
-
 #[derive(Component)]
 pub struct Player {}
 
@@ -59,15 +57,14 @@ pub struct Enemy {
 #[derive(Component)]
 pub struct Star {}
 
-
 #[derive(Resource)]
-pub struct Score{
+pub struct Score {
     pub value: u32,
 }
 
-impl Default for Score{
+impl Default for Score {
     fn default() -> Self {
-        return Score{value: 0}
+        return Score { value: 0 };
     }
 }
 
@@ -75,11 +72,11 @@ impl Default for Score{
 pub struct StarSpawnTimer {
     pub timer: Timer,
 }
-impl Default for StarSpawnTimer{
+impl Default for StarSpawnTimer {
     fn default() -> Self {
-        return StarSpawnTimer{
-            timer: Timer::from_seconds(STAR_SPAWN_TIME, TimerMode::Repeating)
-        }
+        return StarSpawnTimer {
+            timer: Timer::from_seconds(STAR_SPAWN_TIME, TimerMode::Repeating),
+        };
     }
 }
 
@@ -90,28 +87,22 @@ pub fn spawn_player(
 ) {
     let window = window_query.get_single().unwrap();
 
-    commands.spawn(
-        (
-            SpriteBundle {
-                transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
-                texture: asset_server.load("sprites/ball_blue_large.png"),
-                ..default()
-            },
-            Player {}
-        )
-    );
+    commands.spawn((
+        SpriteBundle {
+            transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
+            texture: asset_server.load("sprites/ball_blue_large.png"),
+            ..default()
+        },
+        Player {},
+    ));
 }
 
-pub fn spawn_camera(
-    mut commands: Commands,
-    window_query: Query<&Window, With<PrimaryWindow>>,
-) {
+pub fn spawn_camera(mut commands: Commands, window_query: Query<&Window, With<PrimaryWindow>>) {
     let window = window_query.get_single().unwrap();
-    commands.spawn(
-        Camera2dBundle {
-            transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
-            ..default()
-        });
+    commands.spawn(Camera2dBundle {
+        transform: Transform::from_xyz(window.width() / 2.0, window.height() / 2.0, 0.0),
+        ..default()
+    });
 }
 
 pub fn spawn_enemies(
@@ -132,7 +123,7 @@ pub fn spawn_enemies(
             },
             Enemy {
                 direction: Vec2::new(random::<f32>(), random::<f32>()).normalize(),
-            }
+            },
         ));
     }
 }
@@ -143,33 +134,35 @@ pub fn spawn_stars(
     asset_server: Res<AssetServer>,
 ) {
     let window = window_query.get_single().unwrap();
-    let half_star_size = STAR_SIZE/2.0;
+    let half_star_size = STAR_SIZE / 2.0;
     for _ in 0..STARS_COUNT {
         let mut random_x = random::<f32>() * window.width();
         let mut random_y = random::<f32>() * window.height();
 
-        if random_x < half_star_size{
+        if random_x < half_star_size {
             random_x = half_star_size
         }
-        if random_x > window.width() - half_star_size{
+        if random_x > window.width() - half_star_size {
             random_x = window.width() - half_star_size
         }
 
-        if random_y < half_star_size{
+        if random_y < half_star_size {
             random_y = half_star_size
         }
-        if random_y > window.height() - half_star_size{
+        if random_y > window.height() - half_star_size {
             random_y = window.height() - half_star_size
         }
 
-        commands.spawn((SpriteBundle {
-            transform: Transform::from_xyz(random_x, random_y, 0.0),
-            texture: asset_server.load("sprites/star.png"),
-            ..default()
-        }, Star {}));
+        commands.spawn((
+            SpriteBundle {
+                transform: Transform::from_xyz(random_x, random_y, 0.0),
+                texture: asset_server.load("sprites/star.png"),
+                ..default()
+            },
+            Star {},
+        ));
     }
 }
-
 
 pub fn player_movement(
     keyboard_input: Res<Input<KeyCode>>,
@@ -233,11 +226,7 @@ pub fn confine_player_movement(
     }
 }
 
-
-pub fn enemy_movement(
-    mut enemy_query: Query<(&mut Transform, &Enemy)>,
-    time: Res<Time>,
-) {
+pub fn enemy_movement(mut enemy_query: Query<(&mut Transform, &Enemy)>, time: Res<Time>) {
     for (mut transform, enemy) in enemy_query.iter_mut() {
         let direction = Vec3::new(enemy.direction.x, enemy.direction.y, 0.0);
         transform.translation += direction * ENEMY_SPEED * time.delta_seconds();
@@ -278,7 +267,9 @@ pub fn update_enemy_direction(
 
             let sound_effect = if random::<f32>() > 0.5 {
                 sound_effect1
-            } else { sound_effect2 };
+            } else {
+                sound_effect2
+            };
 
             audio.play(sound_effect);
         }
@@ -327,7 +318,9 @@ pub fn enemy_hit_player(
 ) {
     if let Ok((player_entity, player_transform)) = player_query.get_single_mut() {
         for enemy_transform in enemy_query.iter() {
-            let distance = player_transform.translation.distance(enemy_transform.translation);
+            let distance = player_transform
+                .translation
+                .distance(enemy_transform.translation);
             let player_radius = PLAYER_SIZE / 2.0;
             let enemy_radius = ENEMY_SIZE / 2.0;
 
@@ -347,13 +340,15 @@ pub fn player_hit_star(
     stars_query: Query<(Entity, &Transform), With<Star>>,
     asset_server: Res<AssetServer>,
     audio: Res<Audio>,
-    mut score: ResMut<Score>
-){
+    mut score: ResMut<Score>,
+) {
     if let Ok(player_transform) = player_query.get_single() {
-        for (star_entity, star_transform) in stars_query.iter(){
-            let distance = player_transform.translation.distance(star_transform.translation);
-            let player_radius = PLAYER_SIZE/2.0;
-            let star_radius = STAR_SIZE/2.0;
+        for (star_entity, star_transform) in stars_query.iter() {
+            let distance = player_transform
+                .translation
+                .distance(star_transform.translation);
+            let player_radius = PLAYER_SIZE / 2.0;
+            let star_radius = STAR_SIZE / 2.0;
 
             if distance < player_radius + star_radius {
                 println!("You've got a star!");
@@ -366,10 +361,8 @@ pub fn player_hit_star(
     }
 }
 
-pub fn update_score(
-    score: Res<Score>
-){
-    if score.is_changed(){
+pub fn update_score(score: Res<Score>) {
+    if score.is_changed() {
         println!("Score: {}", score.value.to_string());
     }
 }
